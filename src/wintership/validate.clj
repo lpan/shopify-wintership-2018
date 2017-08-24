@@ -1,6 +1,8 @@
 (ns wintership.validate)
 
 ;; helpers
+(def nullable #(some-fn nil? %))
+
 (defn gen-preds
   "Generate predicates for to a particular type"
   [{:keys [required type length]}]
@@ -8,9 +10,9 @@
         max-length (:max length)]
     (cond-> '()
       (true? required) (conj some?)
-      (= type "string") (conj string?)
-      (= type "number") (conj integer?)
-      (= type "boolean") (conj (some-fn true? false?))
+      (= type "string") (conj (nullable string?))
+      (= type "number") (conj (nullable integer?))
+      (= type "boolean") (conj (nullable (some-fn true? false?)))
       (integer? min-length) (conj #(>= (count %) min-length))
       (integer? max-length) (conj #(<= (count %) max-length)))))
 
