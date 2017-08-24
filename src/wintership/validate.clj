@@ -4,7 +4,7 @@
 (def nullable #(some-fn nil? %))
 
 (defn gen-preds
-  "Generate predicates for to a particular type"
+  "Generate predicates to determine if a particular type is valid"
   [{:keys [required type length]}]
   (let [min-length (:min length)
         max-length (:max length)]
@@ -20,10 +20,11 @@
   "parses schema and returns a map to lookup validators"
   [schema]
   (->> schema
-       (map #(let [k (first (keys %))] (update % k gen-preds)))
+       (map #(let [k (first (keys %))]
+               (update % k gen-preds)))
        (into (sorted-map))))
 
-(defn gen-validator
+(defn gen-get-invalid-fields
   "schema -> customer -> invalid-fields"
   [schema]
   (let [validators (parse-schema schema)]
