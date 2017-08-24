@@ -1,11 +1,11 @@
 (ns wintership.customers
   (:require [clj-http.client :as client]
             [clojure.data.json :as json]
-            [clojure.core.async :refer [>! <! <!! go chan]]))
+            [clojure.core.async :refer [>! go chan]]))
 
 (def url "https://backend-challenge-winter-2017.herokuapp.com/customers.json")
 
-(defn customers []
+(defn customers-chan []
   (let [out (chan)]
     (go (doseq [page (range)]
           (>! out (-> url
