@@ -19,10 +19,9 @@
     (loop [get-invs nil
            invalid-customers []]
       (let [raw-customers (<!! c)
-            schema (:validations raw-customers)
-            customers (:customers raw-customers)]
+            {:keys [validations customers]} raw-customers]
         (cond
-          (nil? get-invs) (let [get-invs (gen-get-invalid-fields schema)]
+          (nil? get-invs) (let [get-invs (gen-get-invalid-fields validations)]
                             (recur get-invs (->> customers
                                                  (keep #(format-invalid-customer get-invs %))
                                                  (into invalid-customers))))

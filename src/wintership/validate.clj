@@ -1,10 +1,10 @@
 (ns wintership.validate)
 
 ;; helpers
-(def nullable #(some-fn nil? %))
+(defn nullable [pred] (some-fn nil? pred))
 
 (defn gen-preds
-  "Generate predicates to determine if a particular type is valid"
+  "Generate predicates for a particular type"
   [{:keys [required type length]}]
   (let [min-length (:min length)
         max-length (:max length)]
@@ -13,29 +13,31 @@
       (= type "string") (conj (nullable string?))
       (= type "number") (conj (nullable integer?))
       (= type "boolean") (conj (nullable (some-fn true? false?)))
-      (integer? min-length) (conj #(>= (count %) min-length))
-      (integer? max-length) (conj #(<= (count %) max-length)))))
+      (integer? min-length) (conj (nullable #(>= (count %) min-length)))
+      (integer? max-length) (conj (nullable #(<= (count %) max-length))))))
 
-(defn parse-schema
-  "parses schema and returns a map to lookup validators"
-  [schema]
-  (->> schema
-       (map #(let [k (first (keys %))]
-               (update % k gen-preds)))
+(defn parse-validations
+  "parses validations object to return a validator lookup map"
+  [validations]
+  (->> validations
+       (map (fn [validation]
+              (let [type-name (-> validation keys first)
+                    criteria (get validation type-name)
+                    is-valid? (->> criteria gen-preds (apply every-pred))]
+                (assoc validation type-name is-valid?))))
        (into (sorted-map))))
 
 (defn gen-get-invalid-fields
-  "schema -> customer -> invalid-fields"
-  [schema]
-  (let [validators (parse-schema schema)]
+  "validations -> customer -> invalid-fields"
+  [validations]
+  (let [validators (parse-validations validations)]
     (fn [customer]
       (->> customer
            seq
            ; select only the invalid fields
-           (filter (fn [[t value]]
-                     (if-let [preds (get validators t)]
-                       (let [is-valid? (apply every-pred preds)]
-                         (not (is-valid? value)))
+           (filter (fn [[type-name value]]
+                     (if-let [is-valid? (get validators type-name)]
+                       (not (is-valid? value))
                        false)))
            ; convert keyword to string
            (map #(-> % first name str))))))
