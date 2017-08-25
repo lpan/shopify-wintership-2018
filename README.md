@@ -1,19 +1,13 @@
 # wintership
 
-FIXME
+## Problem description
+[https://backend-challenge-winter-2017.herokuapp.com/](https://backend-challenge-winter-2017.herokuapp.com/)
 
-## Prerequisites
+## To Run
+```bash
+lein ring server
+```
 
-You will need [Leiningen][] 2.0.0 or above installed.
-
-[leiningen]: https://github.com/technomancy/leiningen
-
-## Running
-
-To start a web server for the application, run:
-
-    lein ring server
-
-## License
-
-Copyright © 2017 FIXME
+## Current limitations
+* No async response (one thread per connection)
+* Naive data fetching (`Blocking Get` in series)
