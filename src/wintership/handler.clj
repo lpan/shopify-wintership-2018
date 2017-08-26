@@ -3,35 +3,36 @@
             [compojure.route :as route]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
             [clojure.data.json :as json]
-            [clojure.core.async :refer [<!! go chan]]
-            [wintership.customers :refer [customers-chan]]
+            [clojure.core.async :refer [<!!]]
+            [wintership.customers :refer [customers-fetch]]
             [wintership.validate :refer [gen-get-invalid-fields]]))
 
-(defn format-invalid-customer [get-invs customer]
+(defn ^:private format-invalid-customer
+  [get-invs customer]
   (let [invalid-fields (get-invs customer)
         id (:id customer)]
     (if-not (empty? invalid-fields)
       {:id id :invalid_fields invalid-fields}
       nil)))
 
-(defn get-invalid-customers []
-  (let [c (customers-chan)]
-    (loop [get-invs nil
+(defn ^:private get-invalid-customers-sync []
+  (let [{:keys [<customers <customer-count <validations]} (customers-fetch)
+        validations (<!! <validations)
+        get-invalid-fields (gen-get-invalid-fields validations)
+        customer-count (<!! <customer-count)]
+    (loop [customer-remaning customer-count
            invalid-customers []]
-      (let [raw-customers (<!! c)
-            {:keys [validations customers]} raw-customers]
-        (cond
-          (nil? get-invs) (let [get-invs (gen-get-invalid-fields validations)]
-                            (recur get-invs (->> customers
-                                                 (keep #(format-invalid-customer get-invs %))
-                                                 (into invalid-customers))))
-          (empty? customers) invalid-customers
-          true (recur get-invs (->> customers
-                                    (keep #(format-invalid-customer get-invs %))
-                                    (into invalid-customers))))))))
+      (if (= customer-remaning 0)
+        invalid-customers
+        (let [customer (<!! <customers)]
+          (if-let [invalid-customer (format-invalid-customer get-invalid-fields customer)]
+            (recur (dec customer-remaning) (conj invalid-customers invalid-customer))
+            (recur (dec customer-remaning) invalid-customers)))))))
 
 (defroutes app-routes
-  (GET "/" [] (json/write-str (get-invalid-customers)))
+  (GET "/" [] (->> (get-invalid-customers-sync)
+                   (sort-by :id)
+                   json/write-str))
   (route/not-found "Not Found"))
 
 (def app
