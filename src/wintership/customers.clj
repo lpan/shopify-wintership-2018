@@ -1,7 +1,7 @@
 (ns wintership.customers
   (:require [clj-http.client :as client]
             [clojure.data.json :as json]
-            [clojure.core.async :refer [put! chan]]))
+            [clojure.core.async :refer [put! chan close!]]))
 
 (def url "https://backend-challenge-winter-2017.herokuapp.com/customers.json")
 
@@ -15,30 +15,46 @@
   (client/get url
               {:async? true
                :query-params {"page" page-number}}
-              on-success
+              #(on-success (parse-page %))
               on-failure))
-
-(defn put-page! [channel page-number]
-  (fetch-page {:page-number page-number
-               :on-success #(put! channel (parse-page %))
-               :on-failure #(put! channel nil)}))
 
 (defn ^:private get-page-count
   "parse pagination object to get the count of total pages"
   [{:keys [per_page total]}]
   (int (Math/ceil (/ total per_page))))
 
-(defn ^:private fetch-rest-pages
-  [channel {:keys [pagination] :as first-page}]
-  (let [page-count (get-page-count pagination)]
-    (put! channel first-page)
-    (doseq [page-number (range 2 (inc page-count))]
-      (put-page! channel page-number))))
+(defn ^:private put-all!
+  [channel items]
+  (doseq [i items]
+    (put! channel i)))
 
-(defn <customers []
-  "fetch first page to get the pagination info then fetch rest in parallel"
-  (let [out (chan)]
+(defn ^:private put-rest-customers!
+  [channel pages]
+  (doseq [page-number pages]
+    (fetch-page {:page-number page-number
+                 :on-success #(put-all! channel (:customers %))
+                 :on-failure identity})))
+
+; 1. fetch first page to get pagination info
+; 2. fetch the rest in parallel
+(defn customers-fetch []
+  (let [<customers (chan)
+        <validations (chan)
+        <customer-count (chan)]
     (fetch-page {:page-number 1
-                 :on-success #(fetch-all out (parse-page %))
-                 :on-failure identity})
-    out))
+                 :on-success (fn [page]
+                               (let [{:keys [customers pagination validations]} page
+                                     page-count (get-page-count pagination)
+                                     page-range (range 2 (inc page-count))]
+                                 (put! <validations validations)
+                                 (close! <validations)
+
+                                 (put! <customer-count (:total pagination))
+                                 (close! <customer-count)
+
+                                 (put-all! <customers customers)
+                                 (put-rest-customers! <customers page-range)))
+                 :on-failure #(println %)})
+    {:<customers <customers
+     :<customer-count <customer-count
+     :<validations <validations}))
