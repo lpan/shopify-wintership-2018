@@ -1,11 +1,11 @@
-(ns wintership.handler
+(ns backend-challenge.handler
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
             [clojure.data.json :as json]
             [clojure.core.async :refer [<!!]]
-            [wintership.customers :refer [customers-fetch]]
-            [wintership.validate :refer [gen-get-invalid-fields]]))
+            [backend-challenge.customers :refer [customers-fetch]]
+            [backend-challenge.validate :refer [gen-get-invalid-fields]]))
 
 (defn ^:private format-invalid-customer
   [get-invs customer]

@@ -1,4 +1,4 @@
-(ns wintership.validate)
+(ns backend-challenge.validate)
 
 ;; helpers
 (defn nullable [pred] (some-fn nil? pred))

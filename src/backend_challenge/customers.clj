@@ -1,4 +1,4 @@
-(ns wintership.customers
+(ns backend-challenge.customers
   (:require [clj-http.client :as client]
             [clojure.data.json :as json]
             [clojure.core.async :refer [put! chan close!]]))
