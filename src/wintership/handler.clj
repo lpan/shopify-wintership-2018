@@ -30,7 +30,9 @@
             (recur (dec customer-remaning) invalid-customers)))))))
 
 (defroutes app-routes
-  (GET "/" [] (json/write-str (get-invalid-customers-sync)))
+  (GET "/" [] (->> (get-invalid-customers-sync)
+                   (sort-by :id)
+                   json/write-str))
   (route/not-found "Not Found"))
 
 (def app
