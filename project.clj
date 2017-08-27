@@ -6,6 +6,7 @@
                  [compojure "1.5.1"]
                  [clj-http "3.7.0"]
                  [org.clojure/core.async "0.3.443"]
+                 [camel-snake-kebab "0.4.0"]
                  [org.clojure/data.json "0.2.6"]
                  [ring/ring-defaults "0.2.1"]]
   :plugins [[lein-ring "0.9.7"]]
