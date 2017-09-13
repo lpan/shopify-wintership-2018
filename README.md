@@ -1,5 +1,8 @@
 # wintership
 
+*edit: I didn't get an interview* :cry:
+
+
 This repo contains my attempt on two of Shopify's winter internship challenges
 
 ## Backend challenge
@@ -8,6 +11,10 @@ This repo contains my attempt on two of Shopify's winter internship challenges
 ```bash
 lein ring server
 ```
+
+### Cool stuffs
+* Abstracted the paginated remote resource as a stream of customers with `core.async`
+* Progressive processing!
 
 ### Current limitations
 * No async response (one thread per connection)
