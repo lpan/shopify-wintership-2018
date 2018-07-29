@@ -13,8 +13,7 @@ lein ring server
 ```
 
 ### Cool stuffs
-* Abstracted the paginated remote resource as a stream of customers with `core.async`
-* Progressive processing!
+* Use core.async to implement a two-stage (fetch, process customer data) pipeline.
 
 ### Current limitations
 * No async response (one thread per connection)
